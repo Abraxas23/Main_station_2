@@ -33,6 +33,7 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 
 #include "Delay_us.h"
+#include "ds18b20_RTOS.h"
 
 /* USER CODE END Includes */
 
@@ -61,6 +62,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_Pin GPIO_PIN_13
 #define LED_GPIO_Port GPIOC
+#define DQ_Pin GPIO_PIN_1
+#define DQ_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
