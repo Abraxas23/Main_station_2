@@ -59,6 +59,13 @@ const osThreadAttr_t DallasTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal1,
 };
+/* Definitions for BME280_TASK */
+osThreadId_t BME280_TASKHandle;
+const osThreadAttr_t BME280_TASK_attributes = {
+  .name = "BME280_TASK",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal1,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -70,6 +77,7 @@ static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
 void StartDefaultTask(void *argument);
 void DallasThread(void *argument);
+void BME280_Thread(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -140,6 +148,9 @@ int main(void)
 
   /* creation of DallasTask */
   DallasTaskHandle = osThreadNew(DallasThread, NULL, &DallasTask_attributes);
+
+  /* creation of BME280_TASK */
+  BME280_TASKHandle = osThreadNew(BME280_Thread, NULL, &BME280_TASK_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -351,6 +362,24 @@ void StartDefaultTask(void *argument)
  //   osDelay(1);
 //  }
   /* USER CODE END DallasThread */
+//}
+
+/* USER CODE BEGIN Header_BME280_Thread */
+/**
+* @brief Function implementing the BME280_TASK thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_BME280_Thread */
+//void BME280_Thread(void *argument)
+//{
+  /* USER CODE BEGIN BME280_Thread */
+  /* Infinite loop */
+//  for(;;)
+//  {
+//    osDelay(1);
+ // }
+  /* USER CODE END BME280_Thread */
 //}
 
 /**

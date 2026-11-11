@@ -34,6 +34,7 @@ extern "C" {
 
 #include "Delay_us.h"
 #include "ds18b20_RTOS.h"
+#include "BME280.h"
 
 /* USER CODE END Includes */
 
