@@ -1,14 +1,14 @@
 #include "Delay_us.h"
 
-#define SYSCLOCK 36000000U //  36 Мгц
+#define SYSCLOCK 36000000U //  36 РњРіС†
 
-// DWT для четких задержек
+// DWT РґР»СЏ С‡РµС‚РєРёС… Р·Р°РґРµСЂР¶РµРє
 #define DWT_CYCCNT *(volatile unsigned long *)0xE0001004
 #define DWT_CONTROL *(volatile unsigned long *)0xE0001000
 #define SCB_DEMCR *(volatile unsigned long *)0xE000EDFC
 
 
-void Delay_ms(uint32_t ms)     // мс
+void Delay_ms(uint32_t ms)     // РјСЃ
 {
 	uint32_t ms_count_tick = ms*(SystemCoreClock/1000);
 	SCB_DEMCR |=CoreDebug_DEMCR_TRCENA_Msk;
@@ -18,7 +18,7 @@ void Delay_ms(uint32_t ms)     // мс
 	DWT_CONTROL &= ~DWT_CTRL_CYCCNTENA_Msk;
 }
 
-void Delay_us(uint32_t us)     // мкс
+void Delay_us(uint32_t us)     // РјРєСЃ
 {
 	uint32_t ms_count_tick = us*(SystemCoreClock/1000000);
 	SCB_DEMCR |=CoreDebug_DEMCR_TRCENA_Msk;

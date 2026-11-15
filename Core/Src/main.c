@@ -23,10 +23,21 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
+static uint32_t free_now, free_min;
+
+uint32_t default_free;
+uint32_t dallas_free;
+uint32_t bme_free;
 
 /* USER CODE END PTD */
 
@@ -49,14 +60,14 @@ UART_HandleTypeDef huart1;
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for DallasTask */
 osThreadId_t DallasTaskHandle;
 const osThreadAttr_t DallasTask_attributes = {
   .name = "DallasTask",
-  .stack_size = 256 * 4,
+  .stack_size = 264 * 4,
   .priority = (osPriority_t) osPriorityNormal1,
 };
 /* Definitions for BME280_TASK */
@@ -305,6 +316,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(DQ_GPIO_Port, DQ_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, Time_default_Pin|Time_ds18b20_Pin|Time_bme280_Pin|Time_idle_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -318,6 +332,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DQ_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : Time_default_Pin Time_ds18b20_Pin Time_bme280_Pin Time_idle_Pin */
+  GPIO_InitStruct.Pin = Time_default_Pin|Time_ds18b20_Pin|Time_bme280_Pin|Time_idle_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -338,10 +359,36 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
+
+  char buf[128];
+  FreeRTOS_StackInfo_t stack;
+  FreeRTOS_MemoryInfo_t mem;
+
   for(;;)
   {
 	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-    osDelay(1000);
+
+     // Мониторим Кучу
+     mem = FreeRTOS_Monitor_GetMemoryInfo();
+     free_now     = mem.heap_free;
+     free_min     = mem.heap_min_free;
+
+     sprintf(buf, "now: %lu  min: %lu    \r\n", (unsigned long)free_now, (unsigned long)free_min);
+     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 100);
+
+
+     // Мониторим Стек Задач
+     stack = FreeRTOS_Monitor_GetStackInfo();
+
+     default_free = stack.defaultTask_free;
+     dallas_free  = stack.DallasTask_free;
+     bme_free     = stack.BME280_TASK_free;
+
+     sprintf(buf, "default: %lu  dallas: %lu  bme280: %lu   \r\n", (unsigned long)default_free, (unsigned long)dallas_free, (unsigned long)bme_free);
+     HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 100);
+
+     osDelay(1000);
+
   }
   /* USER CODE END 5 */
 }

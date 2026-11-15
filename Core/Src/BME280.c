@@ -15,7 +15,7 @@
 extern I2C_HandleTypeDef hi2c1;
 extern UART_HandleTypeDef huart1;
 
-/* ---------- Калибровочные коэффициенты ---------- */
+/* ---------- РљР°Р»РёР±СЂРѕРІРѕС‡РЅС‹Рµ РєРѕСЌС„С„РёС†РёРµРЅС‚С‹ ---------- */
 static uint16_t dig_T1, dig_P1;
 static int16_t  dig_T2, dig_T3, dig_P2, dig_P3, dig_P4, dig_P5, dig_P6, dig_P7, dig_P8, dig_P9;
 static uint8_t  dig_H1, dig_H3;
@@ -23,11 +23,10 @@ static int16_t  dig_H2, dig_H4, dig_H5;
 static int8_t   dig_H6;
 static int32_t  t_fine;
 
-/* ---------- Глобальные буферы для I2C ---------- */
+/* ---------- Р“Р»РѕР±Р°Р»СЊРЅС‹Рµ Р±СѓС„РµСЂС‹ РґР»СЏ I2C ---------- */
 static uint8_t calib_88[24];
 static uint8_t calib_E1[7];
 static char uart_buf[80];
-
 
 static HAL_StatusTypeDef I2C_WriteReg(uint8_t reg, uint8_t value)
 {
@@ -39,12 +38,12 @@ static HAL_StatusTypeDef I2C_ReadRegs(uint8_t reg, uint8_t *data, uint16_t len)
     return HAL_I2C_Mem_Read(&hi2c1, (uint16_t)(BME280_ADDR << 1), reg, I2C_MEMADD_SIZE_8BIT, data, len, 100);
 }
 
-/* ---------- Чтение калибровки ---------- */
+/* ---------- Р§С‚РµРЅРёРµ РєР°Р»РёР±СЂРѕРІРєРё ---------- */
 static void BME280_ReadCalibration(void)
 {
     if (I2C_ReadRegs(0x88, calib_88, 24) != HAL_OK)
     {
-        // обработка ошибки
+        // РѕР±СЂР°Р±РѕС‚РєР° РѕС€РёР±РєРё
         return;
     }
 
@@ -70,7 +69,7 @@ static void BME280_ReadCalibration(void)
     dig_H6 = (int8_t)calib_E1[6];
 }
 
-/* ---------- Инициализация BME280 ---------- */
+/* ---------- РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ BME280 ---------- */
 void BME280_Init(void)
 {
     uint8_t id;
@@ -83,13 +82,13 @@ void BME280_Init(void)
 
     BME280_ReadCalibration();
 
-    // Настройка: T x1, P x1, H x1, нормальный режим
+    // РќР°СЃС‚СЂРѕР№РєР° T x1, P x1, H x1, РЅРѕСЂРјР°Р»СЊРЅС‹Р№ СЂРµР¶РёРј
     I2C_WriteReg(REG_CTRL_HUM, 0x01);   // humidity oversampling x1
     I2C_WriteReg(REG_CTRL_MEAS, 0x27);  // T x1, P x1, normal mode
     I2C_WriteReg(REG_CONFIG, 0x00);     // standby 0.5ms, filter off
 }
 
-/* ---------- Компенсация температуры (возвращает *100) ---------- */
+/* ---------- РљРѕРјРїРµРЅСЃР°С†РёСЏ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ (РІРѕР·РІСЂР°С‰Р°РµС‚ *100) ---------- */
 static int32_t BME280_compensate_T(int32_t adc_T)
 {
     int32_t var1, var2;
@@ -99,7 +98,7 @@ static int32_t BME280_compensate_T(int32_t adc_T)
     return (t_fine * 5 + 128) >> 8;
 }
 
-/* ---------- Компенсация давления (возвращает Па * 256) ---------- */
+/* ---------- РљРѕРјРїРµРЅСЃР°С†РёСЏ РґР°РІР»РµРЅРёСЏ (РІРѕР·РІСЂР°С‰Р°РµС‚ РџР° * 256) ---------- */
 static uint32_t BME280_compensate_P(int32_t adc_P)
 {
     int64_t var1, var2, p;
@@ -123,7 +122,7 @@ static uint32_t BME280_compensate_P(int32_t adc_P)
     return (uint32_t)p;
 }
 
-/* ---------- Компенсация влажности (возвращает %RH * 1024) ---------- */
+/* ---------- РљРѕРјРїРµРЅСЃР°С†РёСЏ РІР»Р°Р¶РЅРѕСЃС‚Рё (РІРѕР·РІСЂР°С‰Р°РµС‚ %RH * 1024) ---------- */
 static uint32_t BME280_compensate_H(int32_t adc_H)
 {
     int32_t v_x1_u32r;
@@ -143,7 +142,7 @@ static uint32_t BME280_compensate_H(int32_t adc_H)
     return (uint32_t)(v_x1_u32r >> 12);
 }
 
-/* ---------- Задача FreeRTOS ---------- */
+/* ---------- Р—Р°РґР°С‡Р° FreeRTOS ---------- */
 void BME280_Thread(void *argument)
 {
     BME280_Init();
@@ -167,19 +166,19 @@ void BME280_Thread(void *argument)
         uint32_t press256 = BME280_compensate_P(adc_P);
         uint32_t hum1024  = BME280_compensate_H(adc_H);
 
-        // Преобразование в удобные единицы
+        // РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РІ СѓРґРѕР±РЅС‹Рµ РµРґРёРЅРёС†С‹
         int16_t temp_int = temp100 / 100;
         uint8_t temp_dec = abs(temp100) % 100;
 
         uint32_t press_hpa_x100 = (press256 * 100) / 25600;
-        uint16_t press_int = press_hpa_x100 / 100 / 1.33322;     //  без 1.33322 будет в hPa а так в мм рт.ст
+        uint16_t press_int = press_hpa_x100 / 100 / 1.33322;     //  Р±РµР· 1.33322 Р±СѓРґРµС‚ РІ hPa, Р° С‚Р°Рє РІ РјРј.СЂС‚.СЃС‚.
         uint8_t press_dec = press_hpa_x100 % 100;
 
         uint32_t hum_x100 = (hum1024 * 100) / 1024;
         uint16_t hum_int = hum_x100 / 100;
         uint8_t hum_dec = hum_x100 % 100;
 
-        // Формируем строку для вывода
+        // С„РѕСЂРјРёСЂСѓРµРј СЃС‚СЂРѕРєСѓ РґР»СЏ РІС‹РІРѕРґР°
         sprintf(uart_buf,
                 "T:%c%d.%02dC P:%d.%02dmm.rt H:%d.%d%% \r\n",
                 temp100 < 0 ? '-' : ' ',
@@ -188,6 +187,7 @@ void BME280_Thread(void *argument)
                 hum_int, hum_dec);
         HAL_UART_Transmit(&huart1, (uint8_t*)uart_buf, strlen(uart_buf), 100);
 
-        osDelay(2300);  // для теста; потом можно ускорить
+        osDelay(2330);  // РґР»СЏ С‚РµСЃС‚Р°, РїРѕС‚РѕРј РјРѕР¶РЅРѕ СѓСЃРєРѕСЂРёС‚СЊ РёР»Рё Р·Р°РјРµРґР»РёС‚СЊ....
+
     }
 }

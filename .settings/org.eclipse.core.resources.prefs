@@ -1,3 +1,4 @@
 eclipse.preferences.version=1
+encoding//Core/Inc/FreeRTOSConfig.h=CP1251
 encoding//Core/Src/ds18b20_RTOS.c=CP1251
-encoding/<project>=CP1251
+encoding/<project>=UTF-8

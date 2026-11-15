@@ -35,6 +35,7 @@ extern "C" {
 #include "Delay_us.h"
 #include "ds18b20_RTOS.h"
 #include "BME280.h"
+#include "freertos_monitor.h"
 
 /* USER CODE END Includes */
 
@@ -65,6 +66,14 @@ void Error_Handler(void);
 #define LED_GPIO_Port GPIOC
 #define DQ_Pin GPIO_PIN_1
 #define DQ_GPIO_Port GPIOA
+#define Time_default_Pin GPIO_PIN_10
+#define Time_default_GPIO_Port GPIOB
+#define Time_ds18b20_Pin GPIO_PIN_11
+#define Time_ds18b20_GPIO_Port GPIOB
+#define Time_bme280_Pin GPIO_PIN_12
+#define Time_bme280_GPIO_Port GPIOB
+#define Time_idle_Pin GPIO_PIN_13
+#define Time_idle_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
