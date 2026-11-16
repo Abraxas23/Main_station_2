@@ -45,12 +45,12 @@
 /* USER CODE BEGIN Includes */
 /* Section where include file can be added */
 
-void FreeRTOS_Monitor_TaskIn(void);                                          // ��� ������ � ���������� ������������, ������ ������� �����
-void FreeRTOS_Monitor_TaskOut(void);									 	 // ��� ������ � ���������� ������������, ������ ������� �����
+void FreeRTOS_Monitor_TaskIn(void);                                          // --------------------------------------------------------------
+void FreeRTOS_Monitor_TaskOut(void);
 
-#define traceTASK_SWITCHED_IN()  FreeRTOS_Monitor_TaskIn()                   // ��� ������ � ���������� ������������, ������ ������� �����
-#define traceTASK_SWITCHED_OUT() FreeRTOS_Monitor_TaskOut()                  // ��� ������ � ���������� ������������, ������ ������� �����
-#define INCLUDE_xTaskGetIdleTaskHandle 1                                     // ��� ������ � ���������� ������������, ������ ������� �����
+#define traceTASK_SWITCHED_IN()  FreeRTOS_Monitor_TaskIn()                   // для анализа времени TASK с помощью Логического Анализатора
+#define traceTASK_SWITCHED_OUT() FreeRTOS_Monitor_TaskOut()
+#define INCLUDE_xTaskGetIdleTaskHandle 1                                     // ---------------------------------------------------------------
 /* USER CODE END Includes */
 
 /* Ensure definitions are only used by the compiler, and not by the assembler. */
