@@ -137,60 +137,85 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 // ***************************************************************************************
-  uint8_t version = 0;
 
-  SX1278_Reset();
 
-  HAL_StatusTypeDef status =
-      SX1278_ReadRegister(SX1278_REG_VERSION, &version);
 
-  char message[64];
+   //              КОНФИГУРАЦИЯ РАДИОКАНАЛА
 
-  if (status == HAL_OK)
+  // Проверка №1
+  // Приемник должен быть с такой же конфигурацией:
+
+  SX1278_Config_t radio_config =
   {
-      snprintf(message, sizeof(message),
-               "SX1278 Version: 0x%02X\r\n", version);
+      .frequency        = 433920000UL,       // 433.92 МГц
+      .spreading_factor = 7,                 // SF7
+      .bandwidth        = SX1278_BW_125_KHZ, // BW125
+      .coding_rate      = 1,                 // CR 4/5
+      .preamble_length  = 8,                 // 8 символов
+      .sync_word        = 0x12,              // Частная LoRa-сеть
+      .crc_enable       = 1                  // CRC включён
+  };
+
+
+
+   //              ИНИЦИАЛИЗАЦИЯ РАДИОМОДУЛЯ
+
+
+  HAL_StatusTypeDef radio_status;
+
+  radio_status = SX1278_Init(&radio_config);
+
+  char message[100];
+
+  if (radio_status == HAL_OK)
+  {
+      snprintf(message, sizeof(message), "SX1278 initialization OK!\r\n");
   }
   else
   {
-      snprintf(message, sizeof(message),
-               "SPI ERROR!\r\n");
+      snprintf(message, sizeof(message), "SX1278 initialization ERROR: %d\r\n", radio_status);
   }
 
-  HAL_UART_Transmit(&huart1,
-                    (uint8_t*)message,
-                    strlen(message),
-                    HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart1, (uint8_t*)message, strlen(message), HAL_MAX_DELAY);
 
+  // Проверим Регистры, удалось ли настроить
 
-  uint8_t reg_old = 0;
-  uint8_t reg_test = 0;
-  uint8_t reg_read = 0;
+  uint8_t reg_value;
 
-  // Читаем исходное значение
-  SX1278_ReadRegister(0x0A, &reg_old);
+  // Список регистров для проверки:
+  uint8_t registers[] =
+  {
+      0x01, // RegOpMode
+      0x06, // RegFrfMsb
+      0x07, // RegFrfMid
+      0x08, // RegFrfLsb
+      0x1D, // RegModemConfig1
+      0x1E, // RegModemConfig2
+      0x26, // RegModemConfig3
+      0x39  // RegSyncWord
+  };
 
-  // Записываем тестовое значение
-  SX1278_WriteRegister(0x0A, 0x0A);
+  for (uint8_t i = 0; i < sizeof(registers); i++)
+  {
+      if (SX1278_ReadRegister(registers[i], &reg_value) == HAL_OK)
+      {
+          snprintf(message, sizeof(message), "REG 0x%02X = 0x%02X\r\n", registers[i], reg_value);
 
-  // Читаем обратно
-  SX1278_ReadRegister(0x0A, &reg_read);
+          HAL_UART_Transmit(&huart1, (uint8_t*)message, strlen(message), HAL_MAX_DELAY);
+      }
+      else
+      {
+          snprintf(message, sizeof(message), "REG 0x%02X READ ERROR\r\n", registers[i]);
 
-  // Выводим результат
-  snprintf(message, sizeof(message),
-           "RegPaRamp: OLD=0x%02X NEW=0x%02X\r\n",
-           reg_old, reg_read);
+          HAL_UART_Transmit(&huart1, (uint8_t*)message, strlen(message), HAL_MAX_DELAY);
+      }
+  }
 
-  HAL_UART_Transmit(&huart1,
-                    (uint8_t*)message,
-                    strlen(message),
-                    HAL_MAX_DELAY);
-
-  // Возвращаем исходное значение
-  SX1278_WriteRegister(0x0A, reg_old);
 
 
 // *****************************************************************************************
+
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -224,6 +249,12 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+
+  // ПРИОСТАНОВИМ ВЫПОЛНЕНИЕ ЗАДАЧ КОТОРЫЕ В ДАННЫЙ МОМЕНТ НЕ НУЖНЫ:
+
+  osThreadSuspend(BME280_TASKHandle);
+  osThreadSuspend(DallasTaskHandle);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
