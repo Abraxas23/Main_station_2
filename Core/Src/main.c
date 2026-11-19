@@ -54,6 +54,8 @@ uint32_t bme_free;
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+SPI_HandleTypeDef hspi1;
+
 UART_HandleTypeDef huart1;
 
 /* Definitions for defaultTask */
@@ -86,6 +88,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_SPI1_Init(void);
 void StartDefaultTask(void *argument);
 void DallasThread(void *argument);
 void BME280_Thread(void *argument);
@@ -130,8 +133,64 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_USART1_UART_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
+// ***************************************************************************************
+  uint8_t version = 0;
+
+  SX1278_Reset();
+
+  HAL_StatusTypeDef status =
+      SX1278_ReadRegister(SX1278_REG_VERSION, &version);
+
+  char message[64];
+
+  if (status == HAL_OK)
+  {
+      snprintf(message, sizeof(message),
+               "SX1278 Version: 0x%02X\r\n", version);
+  }
+  else
+  {
+      snprintf(message, sizeof(message),
+               "SPI ERROR!\r\n");
+  }
+
+  HAL_UART_Transmit(&huart1,
+                    (uint8_t*)message,
+                    strlen(message),
+                    HAL_MAX_DELAY);
+
+
+  uint8_t reg_old = 0;
+  uint8_t reg_test = 0;
+  uint8_t reg_read = 0;
+
+  // Читаем исходное значение
+  SX1278_ReadRegister(0x0A, &reg_old);
+
+  // Записываем тестовое значение
+  SX1278_WriteRegister(0x0A, 0x0A);
+
+  // Читаем обратно
+  SX1278_ReadRegister(0x0A, &reg_read);
+
+  // Выводим результат
+  snprintf(message, sizeof(message),
+           "RegPaRamp: OLD=0x%02X NEW=0x%02X\r\n",
+           reg_old, reg_read);
+
+  HAL_UART_Transmit(&huart1,
+                    (uint8_t*)message,
+                    strlen(message),
+                    HAL_MAX_DELAY);
+
+  // Возвращаем исходное значение
+  SX1278_WriteRegister(0x0A, reg_old);
+
+
+// *****************************************************************************************
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -261,6 +320,44 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -317,6 +414,12 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(DQ_GPIO_Port, DQ_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(NSS_GPIO_Port, NSS_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, Time_default_Pin|Time_ds18b20_Pin|Time_bme280_Pin|Time_idle_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : LED_Pin */
@@ -333,8 +436,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DQ_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Time_default_Pin Time_ds18b20_Pin Time_bme280_Pin Time_idle_Pin */
-  GPIO_InitStruct.Pin = Time_default_Pin|Time_ds18b20_Pin|Time_bme280_Pin|Time_idle_Pin;
+  /*Configure GPIO pin : NSS_Pin */
+  GPIO_InitStruct.Pin = NSS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(NSS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : RESET_Pin Time_default_Pin Time_ds18b20_Pin Time_bme280_Pin
+                           Time_idle_Pin */
+  GPIO_InitStruct.Pin = RESET_Pin|Time_default_Pin|Time_ds18b20_Pin|Time_bme280_Pin
+                          |Time_idle_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

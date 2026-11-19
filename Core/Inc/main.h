@@ -36,6 +36,7 @@ extern "C" {
 #include "ds18b20_RTOS.h"
 #include "BME280.h"
 #include "freertos_monitor.h"
+#include "sx1278.h"
 
 /* USER CODE END Includes */
 
@@ -66,6 +67,10 @@ void Error_Handler(void);
 #define LED_GPIO_Port GPIOC
 #define DQ_Pin GPIO_PIN_1
 #define DQ_GPIO_Port GPIOA
+#define NSS_Pin GPIO_PIN_4
+#define NSS_GPIO_Port GPIOA
+#define RESET_Pin GPIO_PIN_0
+#define RESET_GPIO_Port GPIOB
 #define Time_default_Pin GPIO_PIN_10
 #define Time_default_GPIO_Port GPIOB
 #define Time_ds18b20_Pin GPIO_PIN_11
